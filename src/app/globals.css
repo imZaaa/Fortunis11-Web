@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #020617; /* Lu ganti ke Navy Deep biar sinkron bray */
+  --foreground: #ededed;
 }
 
+/* --- KONFIGURASI ANIMASI V4 DI SINI BRAY --- */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Tambahin ini biar class 'animate-infinite-scroll' lu aktif */
+  --animate-infinite-scroll: infinite-scroll 30s linear infinite;
+
+  @keyframes infinite-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }
 
