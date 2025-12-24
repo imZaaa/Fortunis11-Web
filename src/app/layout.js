@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Fortunis 11',
+  title: 'Digital Command Center: The MI-23 Legacy',
   description: 'Website resmi angkatan Fortunis 11 - Manajemen Informatika',
 }
 
