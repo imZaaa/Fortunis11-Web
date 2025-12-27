@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react' // Tambah useMemo & useCallback bray
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry"
@@ -9,26 +9,65 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function ArchivePage() {
   const [mediaItems, setMediaItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false) // State buat load more
   const [selectedItem, setSelectedItem] = useState(null)
+  const [hasMore, setHasMore] = useState(true) // Cek masih ada data gak di server
+  const [page, setPage] = useState(0)
+  
+  const ITEMS_PER_PAGE = 12 // Tarik 12 data aja sekali jalan biar enteng bray
 
-  useEffect(() => {
-    fetchMedia()
-  }, [])
+  // Pakai useCallback biar fungsi gak dibikin ulang terus pas render
+  const fetchMedia = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
 
-  const fetchMedia = async () => {
+    const from = page * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
     const { data, error } = await supabase
       .from('archive_media')
       .select('*')
       .order('created_at', { ascending: false })
+      .range(from, to) // INI KUNCINYA BRAY! Narik data bertahap.
 
-    if (!error) setMediaItems(data)
-    setLoading(false)
+    if (!error && data) {
+      if (isInitial) {
+        setMediaItems(data);
+      } else {
+        setMediaItems(prev => [...prev, ...data]); // Gabungin data lama ama baru
+      }
+      
+      // Kalau data yang balik kurang dari ITEMS_PER_PAGE, berarti udah abis
+      if (data.length < ITEMS_PER_PAGE) setHasMore(false);
+    }
+
+    setLoading(false);
+    setLoadingMore(false);
+  }, [page]);
+
+  useEffect(() => {
+    fetchMedia(page === 0);
+  }, [fetchMedia, page]);
+
+  // USE MEMO: Biar filter ini gak dijalanin terus tiap ada perubahan kecil bray. 
+  // Browser jadi gak capek mikir.
+  const categorizedMedia = useMemo(() => {
+    return {
+      photos: mediaItems.filter(item => item.media_type === 'image' || (!['video', 'youtube'].includes(item.media_type))),
+      videos: mediaItems.filter(item => item.media_type === 'video'),
+      youtubeLinks: mediaItems.filter(item => item.media_type === 'youtube')
+    }
+  }, [mediaItems]);
+
+  const { photos, videos, youtubeLinks } = categorizedMedia;
+
+  // HELPER AUTO KOMPRES (Tetep aman bray)
+  const getOptimizedUrl = (url, type, isModal = false) => {
+    if (type !== 'image') return url;
+    const width = isModal ? 1200 : 600;
+    const quality = isModal ? 80 : 60;
+    return `${url}?width=${width}&quality=${quality}`;
   }
-
-  // Filter data bray
-  const photos = mediaItems.filter(item => item.media_type === 'image' || (!['video', 'youtube'].includes(item.media_type)));
-  const videos = mediaItems.filter(item => item.media_type === 'video');
-  const youtubeLinks = mediaItems.filter(item => item.media_type === 'youtube');
 
   // LOGIK RENDER MEDIA
   const renderMediaContent = (item, isModal = false) => {
@@ -45,16 +84,35 @@ export default function ArchivePage() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen
                 className={`aspect-video w-full ${isModal ? 'max-w-4xl mx-auto shadow-2xl' : 'pointer-events-none'}`}
+                loading="lazy"
             ></iframe>
         )
     } else if (item.media_type === 'video') {
-        return <video src={item.media_url} className={mediaClasses} controls={isModal} autoPlay={isModal} loop muted={!isModal} playsInline />
+        return (
+            <video 
+                src={item.media_url} 
+                className={mediaClasses} 
+                controls={isModal} 
+                autoPlay={isModal} 
+                loop 
+                muted={!isModal} 
+                playsInline 
+                preload="metadata"
+            />
+        )
     } else {
-        return <img src={item.media_url} alt={item.caption} className={mediaClasses} />
+        return (
+            <img 
+                src={getOptimizedUrl(item.media_url, 'image', isModal)} 
+                alt={item.caption} 
+                className={mediaClasses}
+                loading="lazy"
+            />
+        )
     }
   }
 
-  if (loading) return (
+  if (loading && page === 0) return (
     <div className="min-h-screen bg-[#020617] p-12 flex flex-col items-center justify-center">
       <div className="w-20 h-20 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin mb-4"></div>
       <p className="text-pink-500 font-mono italic animate-pulse tracking-widest text-sm">Sedang Sinkron Data...</p>
@@ -89,8 +147,8 @@ export default function ArchivePage() {
                             key={item.id}
                             initial={{ opacity: 0, scale: 0.95 }}
                             whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ delay: 0.1 }}
                             onClick={() => setSelectedItem(item)}
                             className="group relative rounded-[2rem] overflow-hidden bg-red-950/10 border border-red-500/20 backdrop-blur-md cursor-pointer hover:border-red-500 transition-all duration-500 shadow-2xl"
                         >
@@ -165,6 +223,19 @@ export default function ArchivePage() {
                 </ResponsiveMasonry>
             </section>
         )}
+
+        {/* TOMBOL LOAD MORE - BIAR LANCAR JAYA BRAY */}
+        {hasMore && (
+          <div className="flex justify-center pt-10">
+            <button 
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={loadingMore}
+              className="px-8 py-3 bg-pink-600/20 border border-pink-500/40 text-pink-500 rounded-full font-mono text-xs uppercase tracking-[0.2em] hover:bg-pink-600 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loadingMore ? 'Decryption in progress...' : 'Load More Memories'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* MODAL LIGHTBOX */}
@@ -205,7 +276,7 @@ export default function ArchivePage() {
         )}
       </AnimatePresence>
       
-      {/* Footer Back Button - DIPERBAIKI BRAY */}
+      {/* Footer Back Button */}
       <div className="max-w-7xl mx-auto mt-20 pb-20 text-center relative z-[50]">
         <Link 
           href="/" 

@@ -172,7 +172,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 md:p-12 relative overflow-x-hidden bg-[#020617]">
+    <main className="min-h-screen p-6 md:p-12 relative overflow-x-hidden">
       <div className="fixed top-20 right-0 p-4 opacity-[0.03] text-[20rem] font-black text-blue-500 -rotate-12 pointer-events-none select-none z-0">ADMIN</div>
 
       <div className="relative z-10 w-full max-w-2xl mx-auto bg-blue-950/30 border border-blue-500/30 backdrop-blur-xl p-8 md:p-12 rounded-[3rem] shadow-2xl mb-20">
