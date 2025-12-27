@@ -59,7 +59,7 @@ export default function Home() {
         {/* 5. QUOTE BOX */}
         <div className="md:col-span-2 bg-blue-950/40 border border-blue-400/20 rounded-[2.5rem] p-8 flex flex-col justify-center">
            <p className="text-xl md:text-2xl font-semibold leading-tight italic text-blue-50">
-             In <span className="text-blue-400">Fortunis 11</span>, we don't just study informatics, we live it.
+             In <span className="text-blue-400">Fortunis 11</span>, we dont just study informatics, we live it.
            </p>
         </div>
 

@@ -63,7 +63,7 @@ export default function MembersPage() {
   if (loading) return (
     <div className="min-h-screen bg-[#020617] p-12 flex flex-col items-center justify-center">
       <div className="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-      <p className="text-blue-500 font-mono italic animate-pulse tracking-widest text-sm">SYNCING_SQUAD_DATABASE...</p>
+      <p className="text-blue-500 font-mono italic animate-pulse tracking-widest text-sm">Sedang Sinkron Data...</p>
     </div>
   )
 

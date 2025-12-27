@@ -57,7 +57,7 @@ export default function ArchivePage() {
   if (loading) return (
     <div className="min-h-screen bg-[#020617] p-12 flex flex-col items-center justify-center">
       <div className="w-20 h-20 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin mb-4"></div>
-      <p className="text-pink-500 font-mono italic animate-pulse tracking-widest text-sm">DECRYPTING_ARCHIVE_DATA...</p>
+      <p className="text-pink-500 font-mono italic animate-pulse tracking-widest text-sm">Sedang Sinkron Data...</p>
     </div>
   )
 
@@ -72,7 +72,6 @@ export default function ArchivePage() {
           <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white">
             THE <span className="text-pink-600 drop-shadow-[0_0_20px_rgba(236,72,153,0.4)]">VAULT</span>
           </h1>
-          <p className="text-blue-200/60 font-mono mt-4 max-w-2xl mx-auto uppercase text-[10px] tracking-[0.2em]">Permanent digital records // Fortunis11 Camaraderie</p>
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10 pb-20 space-y-32">
