@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback } from 'react' // Tambah useMemo & useCallback bray
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry"
@@ -9,14 +9,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function ArchivePage() {
   const [mediaItems, setMediaItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false) // State buat load more
+  const [loadingMore, setLoadingMore] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
-  const [hasMore, setHasMore] = useState(true) // Cek masih ada data gak di server
+  const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
   
-  const ITEMS_PER_PAGE = 12 // Tarik 12 data aja sekali jalan biar enteng bray
+  const ITEMS_PER_PAGE = 12
 
-  // Pakai useCallback biar fungsi gak dibikin ulang terus pas render
   const fetchMedia = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
@@ -28,16 +27,15 @@ export default function ArchivePage() {
       .from('archive_media')
       .select('*')
       .order('created_at', { ascending: false })
-      .range(from, to) // INI KUNCINYA BRAY! Narik data bertahap.
+      .range(from, to)
 
     if (!error && data) {
       if (isInitial) {
         setMediaItems(data);
       } else {
-        setMediaItems(prev => [...prev, ...data]); // Gabungin data lama ama baru
+        setMediaItems(prev => [...prev, ...data]);
       }
       
-      // Kalau data yang balik kurang dari ITEMS_PER_PAGE, berarti udah abis
       if (data.length < ITEMS_PER_PAGE) setHasMore(false);
     }
 
@@ -49,8 +47,6 @@ export default function ArchivePage() {
     fetchMedia(page === 0);
   }, [fetchMedia, page]);
 
-  // USE MEMO: Biar filter ini gak dijalanin terus tiap ada perubahan kecil bray. 
-  // Browser jadi gak capek mikir.
   const categorizedMedia = useMemo(() => {
     return {
       photos: mediaItems.filter(item => item.media_type === 'image' || (!['video', 'youtube'].includes(item.media_type))),
@@ -61,7 +57,6 @@ export default function ArchivePage() {
 
   const { photos, videos, youtubeLinks } = categorizedMedia;
 
-  // HELPER AUTO KOMPRES (Tetep aman bray)
   const getOptimizedUrl = (url, type, isModal = false) => {
     if (type !== 'image') return url;
     const width = isModal ? 1200 : 600;
@@ -69,10 +64,10 @@ export default function ArchivePage() {
     return `${url}?width=${width}&quality=${quality}`;
   }
 
-  // LOGIK RENDER MEDIA
   const renderMediaContent = (item, isModal = false) => {
+    // Tweak max-height di sini bray biar gak mepet navbar
     const mediaClasses = isModal 
-      ? "max-w-full max-h-[75vh] object-contain mx-auto block rounded-xl shadow-2xl" 
+      ? "max-w-full max-h-[60vh] object-contain mx-auto block rounded-xl shadow-2xl border border-white/10" 
       : "w-full h-full object-cover transition-transform duration-700 group-hover:scale-105";
     
     if (item.media_type === 'youtube') {
@@ -83,7 +78,7 @@ export default function ArchivePage() {
                 frameBorder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen
-                className={`aspect-video w-full ${isModal ? 'max-w-4xl mx-auto shadow-2xl' : 'pointer-events-none'}`}
+                className={`aspect-video w-full ${isModal ? 'max-w-4xl mx-auto shadow-2xl rounded-xl' : 'pointer-events-none'}`}
                 loading="lazy"
             ></iframe>
         )
@@ -120,11 +115,9 @@ export default function ArchivePage() {
   )
 
   return (
-    <main className="min-h-screen p-6 md:p-12 lg:p-20 relative overflow-x-hidden">
-      {/* Background Text */}
+    <main className="min-h-screen p-6 md:p-12 lg:p-20 relative overflow-x-hidden ">
       <div className="fixed top-20 left-0 p-4 opacity-[0.03] text-[15rem] font-black text-pink-500 rotate-12 pointer-events-none select-none z-0">VAULT</div>
 
-      {/* Header */}
       <div className="max-w-7xl mx-auto mb-24 relative z-10 text-center">
           <h2 className="text-pink-500 text-xs font-bold uppercase tracking-[0.5em] mb-4 font-mono">Classified Memories</h2>
           <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white">
@@ -133,8 +126,6 @@ export default function ArchivePage() {
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10 pb-20 space-y-32">
-        
-        {/* --- SECTION: YOUTUBE --- */}
         {youtubeLinks.length > 0 && (
             <section>
                 <div className="flex items-center gap-6 mb-12">
@@ -142,7 +133,7 @@ export default function ArchivePage() {
                     <div className="h-[1px] w-full bg-gradient-to-r from-red-500/50 to-transparent"></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {youtubeLinks.map((item, index) => (
+                    {youtubeLinks.map((item) => (
                         <motion.div 
                             key={item.id}
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -168,7 +159,6 @@ export default function ArchivePage() {
             </section>
         )}
 
-        {/* --- SECTION: VIDEOS --- */}
         {videos.length > 0 && (
             <section>
                 <div className="flex items-center gap-6 mb-12">
@@ -197,7 +187,6 @@ export default function ArchivePage() {
             </section>
         )}
 
-        {/* --- SECTION: PHOTOS --- */}
         {photos.length > 0 && (
             <section>
                 <div className="flex items-center gap-6 mb-12">
@@ -224,7 +213,6 @@ export default function ArchivePage() {
             </section>
         )}
 
-        {/* TOMBOL LOAD MORE - BIAR LANCAR JAYA BRAY */}
         {hasMore && (
           <div className="flex justify-center pt-10">
             <button 
@@ -238,12 +226,13 @@ export default function ArchivePage() {
         )}
       </div>
 
-      {/* MODAL LIGHTBOX */}
+      {/* --- MODAL LIGHTBOX FIXED --- */}
       <AnimatePresence>
         {selectedItem && (
             <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/98 backdrop-blur-3xl"
+                // Tambah pt-24 biar gak mepet navbar bray, overflow-y-auto biar aman di layar kecil
+                className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-24 pb-10 bg-[#020617]/98 backdrop-blur-3xl overflow-y-auto"
                 onClick={() => setSelectedItem(null)}
             >
                 <motion.div 
@@ -251,19 +240,22 @@ export default function ArchivePage() {
                     className="relative max-w-6xl w-full flex flex-col items-center"
                     onClick={(e) => e.stopPropagation()} 
                 >
+                    {/* Modal Header */}
                     <div className="w-full flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3">
                             <span className={`w-3 h-3 rounded-full animate-pulse ${selectedItem.media_type === 'youtube' ? 'bg-red-500' : selectedItem.media_type === 'video' ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
-                            <p className="text-xs font-mono text-white/60 uppercase tracking-widest italic">{selectedItem.media_type} Original_View</p>
+                            <p className="text-xs font-mono text-white/60 uppercase tracking-widest italic">{selectedItem.media_type}</p>
                         </div>
                         <button onClick={() => setSelectedItem(null)} className="text-white/40 hover:text-white font-mono text-sm bg-white/5 px-6 py-2 rounded-full border border-white/10 transition-all active:scale-95">CLOSE [X]</button>
                     </div>
 
-                    <div className="w-full flex justify-center items-center overflow-hidden">
+                    {/* Media Container - Height dikontrol di renderMediaContent */}
+                    <div className="w-full flex justify-center items-center">
                         {renderMediaContent(selectedItem, true)}
                     </div>
                     
-                    <div className="mt-8 w-full max-w-4xl text-center md:text-left">
+                    {/* Caption & Metadata */}
+                    <div className="mt-10 w-full max-w-4xl text-center md:text-left pb-10">
                         <p className="text-white text-2xl md:text-4xl font-black italic leading-tight tracking-tight">{selectedItem.caption}</p>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
                             <span className="px-3 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-mono text-blue-400">{new Date(selectedItem.created_at).toDateString()}</span>
@@ -276,7 +268,6 @@ export default function ArchivePage() {
         )}
       </AnimatePresence>
       
-      {/* Footer Back Button */}
       <div className="max-w-7xl mx-auto mt-20 pb-20 text-center relative z-[50]">
         <Link 
           href="/" 
