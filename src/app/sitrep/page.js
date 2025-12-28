@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
+import Swal from 'sweetalert2' // Import SweetAlert2 bray
 
 export default function SitrepPage() {
   const [messages, setMessages] = useState([])
@@ -9,7 +10,13 @@ export default function SitrepPage() {
   const [hasAccess, setHasAccess] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // --- HELPER: Logic 40 huruf ganti baris ---
+  // Konfigurasi SweetAlert seragam bray
+  const toast = {
+    background: '#0B1024',
+    color: '#fff',
+    confirmButtonColor: '#2563eb'
+  }
+
   const formatContent = (text) => {
     const words = text.split(' ');
     let result = '';
@@ -26,7 +33,6 @@ export default function SitrepPage() {
     return result + currentLine.trim();
   }
 
-  // --- LOGIC SUPABASE (TETAP AMAN BRAY) ---
   const checkPermission = useCallback(async () => {
     try {
       let token = localStorage.getItem('vault_token')
@@ -86,11 +92,9 @@ export default function SitrepPage() {
         </h1>
       </div>
 
-      {/* --- BOARD MASONRY (CSS COLUMNS) --- */}
       <div className="relative w-full max-w-[98%] bg-zinc-950/40 border-2 border-zinc-800/40 rounded-[3rem] p-6 md:p-10 shadow-2xl min-h-[70vh] backdrop-blur-md mb-40">
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[size:30px_30px]"></div>
         
-        {/* Pake columns- biar kotak nempel ke atas tanpa gap baris */}
         <div className="relative z-10 columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
             <AnimatePresence mode='popLayout'>
                 {messages.map((msg) => (
@@ -100,10 +104,8 @@ export default function SitrepPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.5 }}
                     transition={{ type: "spring", damping: 20, stiffness: 100 }}
-                    // break-inside-avoid biar kotak gak kepotong pas ganti kolom
                     className="break-inside-avoid bg-[#0B1024] border border-blue-900/30 p-6 rounded-[2rem] shadow-xl hover:border-blue-500/50 transition-all duration-300 group"
                 >
-                    {/* Teks bakal nentuin tinggi kotak secara alami */}
                     <p className="text-xs md:text-sm text-blue-100/90 leading-relaxed font-bold break-words whitespace-pre-wrap">
                       {formatContent(msg.content)}
                     </p>
@@ -128,7 +130,6 @@ export default function SitrepPage() {
         )}
       </div>
 
-      {/* --- INPUT CONSOLE --- */}
       <div className="fixed bottom-6 md:bottom-10 left-0 w-full px-4 md:px-6 z-50">
         <div className="max-w-4xl mx-auto">
           {hasAccess ? (
@@ -156,7 +157,14 @@ export default function SitrepPage() {
                 onClick={async () => {
                   const token = localStorage.getItem('vault_token')
                   const { error } = await supabase.from('access_permissions').insert([{ agent_token: token, is_granted: false }])
-                  if (!error) alert("Access request sent to Command Center.")
+                  if (!error) {
+                    Swal.fire({ 
+                      ...toast, 
+                      icon: 'info', 
+                      title: 'Request Sent!', 
+                      text: "Access request sent to Command Center, bray. Tunggu di-approve ya!" 
+                    })
+                  }
                 }}
                 className="px-8 md:px-10 py-2.5 md:py-3 bg-white/5 hover:bg-white hover:text-black rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
               >

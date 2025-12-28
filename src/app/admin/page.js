@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Swal from 'sweetalert2' // Import SweetAlert2 bray
 
 export default function AdminPage() {
   const [uploading, setUploading] = useState(false)
@@ -17,11 +18,17 @@ export default function AdminPage() {
   const [existingMedia, setExistingMedia] = useState([])
   const [loadingMedia, setLoadingMedia] = useState(true)
 
-  // State baru buat Manajemen Akses SITREP bray
   const [requests, setRequests] = useState([])
   const [loadingRequests, setLoadingRequests] = useState(true)
 
-  // 1. Fungsi Tarik Data Media & Request Izin bray
+  // Konfigurasi SweetAlert biar serasi sama tema lo bray
+  const toast = {
+    background: '#0B1024',
+    color: '#fff',
+    confirmButtonColor: '#2563eb',
+    cancelButtonColor: '#dc2626'
+  }
+
   const fetchExistingMedia = useCallback(async () => {
     setLoadingMedia(true)
     const { data, error } = await supabase
@@ -46,10 +53,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchExistingMedia()
-    fetchRequests() // Panggil permintaan izin pas halaman dibuka bray
+    fetchRequests()
   }, [fetchExistingMedia, fetchRequests])
 
-  // Cleanup Preview URL
   useEffect(() => {
     return () => {
       if (previewUrl && !previewUrl.startsWith('http')) {
@@ -58,7 +64,6 @@ export default function AdminPage() {
     }
   }, [previewUrl])
 
-  // --- LOGIKA HELPER & UPLOAD ---
   const getYoutubeEmbedUrl = (url) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
     const match = url.match(regExp)
@@ -75,7 +80,9 @@ export default function AdminPage() {
   }
 
   const handleUpload = async () => {
-    if (!caption) return setStatus({ type: 'error', message: 'Caption wajib diisi, Commander!' })
+    if (!caption) {
+      return Swal.fire({ ...toast, icon: 'error', title: 'Error!', text: 'Caption wajib diisi, Commander!' })
+    }
     setUploading(true)
     setStatus({ type: 'loading', message: 'Initiating upload sequence...' })
 
@@ -107,20 +114,32 @@ export default function AdminPage() {
       }])
 
       if (dbError) throw dbError
-      setStatus({ type: 'success', message: 'Mission Accomplished! Media archived.' })
+      
+      Swal.fire({ ...toast, icon: 'success', title: 'Mission Accomplished!', text: 'Media archived.' })
+      
       setFile(null); setPreviewUrl(null); setCaption(''); setYoutubeLink('');
       fetchExistingMedia()
-      setTimeout(() => setStatus({ type: '', message: '' }), 3000)
     } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'Upload failed!' })
+      Swal.fire({ ...toast, icon: 'error', title: 'Upload Failed!', text: error.message })
     } finally {
       setUploading(false)
+      setStatus({ type: '', message: '' })
     }
   }
 
-  // --- LOGIKA DELETE & APPROVE ---
   const handleDelete = async (item) => {
-    if (!confirm('Yakin mau hapus memori ini bray?')) return
+    const result = await Swal.fire({
+      ...toast,
+      title: 'Eliminate Memory?',
+      text: "You won't be able to revert this, bray!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, eliminate it!',
+      cancelButtonText: 'Abort'
+    })
+
+    if (!result.isConfirmed) return
+
     try {
       if (item.media_type !== 'youtube') {
         const pathParts = item.media_url.split('archive_bucket/')
@@ -132,21 +151,33 @@ export default function AdminPage() {
       const { error } = await supabase.from('archive_media').delete().eq('id', item.id)
       if (!error) {
         setExistingMedia(prev => prev.filter(m => m.id !== item.id))
-        alert("Memory eliminated!")
+        Swal.fire({ ...toast, icon: 'success', title: 'Eliminated!', text: "Memory eliminated from database." })
       }
-    } catch (error) { alert(error.message) }
+    } catch (error) { 
+      Swal.fire({ ...toast, icon: 'error', text: error.message }) 
+    }
   }
 
   const handleApprove = async (id) => {
     const { error } = await supabase.from('access_permissions').update({ is_granted: true }).eq('id', id)
     if (!error) {
-      alert("Izin diberikan, Commander!")
-      fetchRequests() // Refresh list izin bray
+      Swal.fire({ ...toast, icon: 'success', title: 'Authorized!', text: "Izin diberikan, Commander!" })
+      fetchRequests()
     }
   }
 
   const handleDeleteRequest = async (id) => {
-    if (!confirm('Hapus request ini bray?')) return
+    const result = await Swal.fire({
+      ...toast,
+      title: 'Terminate Request?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Terminate',
+      cancelButtonText: 'Keep'
+    })
+
+    if (!result.isConfirmed) return
+
     const { error } = await supabase.from('access_permissions').delete().eq('id', id)
     if (!error) fetchRequests()
   }
@@ -157,8 +188,8 @@ export default function AdminPage() {
 
       <div className="relative z-10 w-full max-w-2xl mx-auto bg-blue-950/30 border border-blue-500/30 backdrop-blur-xl p-8 md:p-12 rounded-[3rem] shadow-2xl mb-20">
         <div className="text-center mb-10">
-           <Link href="/" className="text-zinc-500 hover:text-blue-400 transition-colors text-[10px] font-bold uppercase tracking-[0.3em] mb-2 block">← Abort Mission</Link>
-           <h1 className="text-4xl md:text-5xl font-black italic text-white uppercase tracking-tighter">Upload <span className="text-blue-600">Deck</span></h1>
+            <Link href="/" className="text-zinc-500 hover:text-blue-400 transition-colors text-[10px] font-bold uppercase tracking-[0.3em] mb-2 block">← Abort Mission</Link>
+            <h1 className="text-4xl md:text-5xl font-black italic text-white uppercase tracking-tighter">Upload <span className="text-blue-600">Deck</span></h1>
         </div>
 
         <div className="flex bg-black/40 p-1 rounded-full mb-8 border border-blue-500/20">
@@ -171,12 +202,12 @@ export default function AdminPage() {
             <input type="text" placeholder="Paste YouTube URL here..." value={youtubeLink} onChange={(e) => setYoutubeLink(e.target.value)} className="w-full bg-blue-950/40 border border-pink-500/30 rounded-2xl py-4 px-6 text-white font-mono text-sm focus:outline-none" />
           ) : (
             <div className="relative group">
-               <input type="file" accept="image/*,video/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
-               <div className={`bg-blue-950/40 border-2 border-dashed ${file ? 'border-blue-500' : 'border-blue-500/30'} rounded-3xl p-8 text-center transition-all overflow-hidden`}>
+                <input type="file" accept="image/*,video/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
+                <div className={`bg-blue-950/40 border-2 border-dashed ${file ? 'border-blue-500' : 'border-blue-500/30'} rounded-3xl p-8 text-center transition-all overflow-hidden`}>
                   {previewUrl ? (
                     mediaType === 'video' ? <video src={previewUrl} className="w-full h-64 object-cover rounded-2xl" /> : <img src={previewUrl} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
                   ) : ( <div className="py-10"> <p className="text-4xl mb-4">📂</p> <p className="text-blue-400 font-bold uppercase tracking-widest text-xs">Drop files or click</p> </div> )}
-               </div>
+                </div>
             </div>
           )}
 
@@ -185,7 +216,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* --- SECTION: MANAGE ARCHIVE --- */}
       <div className="relative z-10 max-w-5xl mx-auto mb-24">
         <div className="flex items-center gap-6 mb-10">
             <h2 className="text-white font-black italic text-2xl uppercase tracking-tighter">Manage <span className="text-blue-500">Archive</span></h2>
@@ -205,7 +235,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* --- SECTION: AGENT PERMISSIONS (NEW!) --- */}
       <div className="relative z-10 max-w-5xl mx-auto mb-20 p-8 bg-black/40 border border-blue-500/20 rounded-[3rem] backdrop-blur-xl">
         <div className="flex items-center gap-6 mb-10">
             <h2 className="text-white font-black italic text-2xl uppercase tracking-tighter">Agent <span className="text-blue-500">Permissions</span></h2>
