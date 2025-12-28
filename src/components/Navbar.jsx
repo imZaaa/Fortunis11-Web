@@ -13,12 +13,14 @@ export default function Navbar() {
   const [error, setError] = useState(false)
 
   // --- KODE RAHASIA ADMIN DI SINI BRAY ---
-  const SECRET_CODE = "123654" // Ganti sesuai selera lu
+  const SECRET_CODE = "123654" // Ganti sesuai selera lu bray
 
+  // Tambahin SITREP ke daftar link utama bray
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Members', path: '/profile' },
     { name: 'Archive', path: '/archive' },
+    { name: 'Board', path: '/sitrep' }, // Papan tulis rahasia MI-23!
   ]
 
   const validateCode = () => {
@@ -38,11 +40,10 @@ export default function Navbar() {
       <div className="fixed top-4 md:top-6 left-0 w-full flex justify-center z-50 px-4">
         <nav className="bg-black/40 backdrop-blur-xl border border-white/10 p-1.5 rounded-full flex items-center gap-0.5 shadow-2xl shadow-blue-500/5">
           
-          <div className="hidden sm:flex pr-4 pl-3 items-center">
-             <span className="text-[10px] font-black italic text-white tracking-tighter uppercase">
-               Fortunis<span className="text-blue-500 text-[10px] font-black italic">11</span>
-             </span>
-             <div className="w-[1px] h-3 bg-white/20 ml-4"></div>
+          <div className="hidden sm:flex pr-4 pl-3 items-center border-r border-white/10 mr-1">
+              <span className="text-[10px] font-black italic text-white tracking-tighter uppercase">
+                Fortunis<span className="text-blue-500 text-[10px] font-black italic">11</span>
+              </span>
           </div>
           
           {/* Menu Biasa */}
@@ -104,7 +105,7 @@ export default function Navbar() {
               onChange={(e) => setAccessCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && validateCode()}
               autoFocus
-              className={`w-full bg-black/50 border-b-2 ${error ? 'border-red-500' : 'border-blue-500/50'} py-3 px-4 text-center text-2xl font-black tracking-[0.5em] text-blue-400 focus:outline-none transition-all`}
+              className={`w-full bg-black/50 border-b-2 ${error ? 'border-red-500' : 'border-blue-500/50'} py-3 px-4 text-center text-2xl font-black tracking-[0.5em] text-blue-400 focus:outline-none transition-all placeholder:text-blue-500/10`}
               placeholder="••••••"
             />
 
